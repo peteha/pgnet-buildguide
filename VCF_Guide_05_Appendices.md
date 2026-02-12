@@ -223,21 +223,21 @@ This JSON file contains the configuration spec used to import settings into the 
       "hostname": "pgesxa1.pgnet.io",
       "credentials": {
         "username": "root",
-        "password": "g!CC@6AoaFNz@Cu@"
+        "password": "VMware123!VMware123!"
       }
     },
     {
       "hostname": "pgesxa2.pgnet.io",
       "credentials": {
         "username": "root",
-        "password": "g!CC@6AoaFNz@Cu@"
+        "password": "VMware123!VMware123!"
       }
     },
     {
       "hostname": "pgesxa3.pgnet.io",
       "credentials": {
         "username": "root",
-        "password": "g!CC@6AoaFNz@Cu@"
+        "password": "VMware123!VMware123!"
       }
     }
   ],
@@ -421,7 +421,7 @@ This JSON file contains the configuration spec used to import settings into the 
         {
           "type": "Root credentials",
           "user": "root",
-          "password": "g!CC@6AoaFNz@Cu@"
+          "password": "VMware123!VMware123!"
         }
       ]
     },
@@ -432,7 +432,7 @@ This JSON file contains the configuration spec used to import settings into the 
         {
           "type": "Root credentials",
           "user": "root",
-          "password": "g!CC@6AoaFNz@Cu@"
+          "password": "VMware123!VMware123!"
         }
       ]
     },
@@ -443,7 +443,7 @@ This JSON file contains the configuration spec used to import settings into the 
         {
           "type": "Root credentials",
           "user": "root",
-          "password": "g!CC@6AoaFNz@Cu@"
+          "password": "VMware123!VMware123!"
         }
       ]
     },
