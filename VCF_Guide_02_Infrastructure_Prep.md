@@ -33,4 +33,4 @@ We will utilize **Kickstart Scripts** (`pgesxa1_ks.cfg` through `pgesxa3_ks.cfg`
      - **Additional AMD Command:** The scripts also append `cpuid.brandstring = "AMD EPYC Ryzen 9 9955HX"` to `/etc/vmware/config`.
      - *Ref:* [William Lam's NVMe Tiering & AMD Workaround Documentation](https://williamlam.com/2025/06/nvme-tiering-with-amd-ryzen-cpu-workaround-for-vcf-9-0.html) and [Improved workaround for NSX Edge on AMD Ryzen (VCF 9.0.2)](https://williamlam.com/2026/01/improved-workaround-for-nsx-edge-deployment-upgrade-to-vcf-9-0-2-running-amd-ryzen-cpus.html).
 
-*Reference:* See **Appendix C** in the Appendices document for the full Kickstart configuration files.
+*Reference:* See **[Appendices](VCF_Guide_05_Appendices.md)** in the Appendices document for the full Kickstart configuration files.

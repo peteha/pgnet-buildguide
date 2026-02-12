@@ -48,134 +48,6 @@ end
 
 The following configurations are used to bootstrap the 3 physical hosts. **DNS, NTP, and VIB URLs have been updated** to point to the local Infrastructure Server (`10.200.1.240`) to ensure critical Day 0 connectivity in an offline environment.
 
-### pgesxa1_ks.cfg
-
-```shell
-vmaccepteula
-
-clearpart --all --overwritevmfs --drives=t10.NVMe____CT1000P1SSD8____________________________4AC5C72A0175A000
-clearpart --all --overwritevmfs --drives=t10.NVMe____CT2000T500SSD8__________________________C21A004E0175A000
-clearpart --all --overwritevmfs --drives=t10.NVMe____CT1000T500SSD8__________________________566A614E0175A000
-
-install --drive=t10.NVMe____CT1000P1SSD8____________________________4AC5C72A0175A000 --overwritevmfs
-reboot
-
-network --bootproto=static --device=vmnic1 --ip=10.200.1.220 --netmask=255.255.255.0 --gateway=10.200.1.1 --hostname=pgesxa1.pgnet.io --nameserver=10.200.1.240 --vlanid=201 --addvmportgroup=1
-
-rootpw g!CC@6AoaFNz@Cu@
-
-%firstboot --interpreter=busybox
-
-while ! vim-cmd hostsvc/runtimeinfo; do
-sleep 10
-done
-
-esxcli network ip dns search add --domain=pgnet.io
-
-# Configure NTP
-esxcli system ntp set -s 10.200.1.240
-esxcli system ntp set --enabled true
-
-vim-cmd hostsvc/enable_ssh
-vim-cmd hostsvc/start_ssh
-esxcli network firewall ruleset set -e true -r sshServer
-esxcli system settings advanced set -o /UserVars/SuppressShellWarning -i 1
-
-vim-cmd hostsvc/datastore/rename datastore1 pg-ds-pgesxa1-1
-
-
-# Enable Memory Tiering
-esxcli system settings kernel set -s MemoryTiering -v TRUE
-esxcli system tierdevice create -d /vmfs/devices/disks/t10.NVMe____CT1000T500SSD8__________________________566A614E0175A000
-esxcli system settings advanced set -o /Mem/TierNvmePct -i 300
-
-
-/bin/generate-certificates
-
-# Workaround required for AMD Ryzen-based CPU
-echo 'monitor_control.disable_apichv ="TRUE"' >> /etc/vmware/config
-
-# Install vSAN ESA Mock VIB (Internal URL for Offline Depot)
-esxcli network firewall ruleset set -e true -r httpClient
-esxcli software acceptance set --level CommunitySupported
-esxcli software vib install -v [http://10.200.1.240/vib/nested-vsan-esa-mock-hw.vib](http://10.200.1.240/vib/nested-vsan-esa-mock-hw.vib) --no-sig-check
-esxcli network firewall ruleset set -e false -r httpClient
-
-
-
-
-esxcli network vswitch standard set --vswitch-name=vSwitch0 --mtu=9000
-esxcli network ip interface set -i vmk0 -m 9000
-esxcli network vswitch standard portgroup set --portgroup-name="Management Network" --vlan-id=201
-
-reboot
-```
-
-### pgesxa2_ks.cfg
-
-```shell
-vmaccepteula
-
-clearpart --all --overwritevmfs --drives=t10.NVMe____CT2000T500SSD8__________________________C7A8704E0175A000
-clearpart --all --overwritevmfs --drives=t10.NVMe____CT1000T500SSD8__________________________4074614E0175A000
-clearpart --all --overwritevmfs --drives=t10.NVMe____Samsung_SSD_970_EVO_500GB_______________31C3B2815B382500
-
-install --drive=t10.NVMe____Samsung_SSD_970_EVO_500GB_______________31C3B2815B382500 --overwritevmfs
-reboot
-
-network --bootproto=static --device=vmnic1 --ip=10.200.1.222 --netmask=255.255.255.0 --gateway=10.200.1.1 --hostname=pgesxa2.pgnet.io --nameserver=10.200.1.240 --vlanid=201 --addvmportgroup=1
-
-rootpw g!CC@6AoaFNz@Cu@
-
-%firstboot --interpreter=busybox
-
-while ! vim-cmd hostsvc/runtimeinfo; do
-sleep 10
-done
-
-esxcli network ip dns search add --domain=pgnet.io
-
-# Configure NTP
-esxcli system ntp set -s 10.200.1.240
-esxcli system ntp set --enabled true
-
-vim-cmd hostsvc/enable_ssh
-vim-cmd hostsvc/start_ssh
-esxcli network firewall ruleset set -e true -r sshServer
-esxcli system settings advanced set -o /UserVars/SuppressShellWarning -i 1
-
-vim-cmd hostsvc/datastore/rename datastore1 pg-ds-pgesxa2-1
-
-
-# Enable Memory Tiering
-esxcli system settings kernel set -s MemoryTiering -v TRUE
-esxcli system tierdevice create -d /vmfs/devices/disks/t10.NVMe____CT1000T500SSD8__________________________4074614E0175A000
-esxcli system settings advanced set -o /Mem/TierNvmePct -i 300
-
-
-/bin/generate-certificates
-
-# Workaround required for AMD Ryzen-based CPU
-echo 'monitor_control.disable_apichv ="TRUE"' >> /etc/vmware/config
-
-# Install vSAN ESA Mock VIB (Internal URL for Offline Depot)
-esxcli network firewall ruleset set -e true -r httpClient
-esxcli software acceptance set --level CommunitySupported
-esxcli software vib install -v [http://10.200.1.240/vib/nested-vsan-esa-mock-hw.vib](http://10.200.1.240/vib/nested-vsan-esa-mock-hw.vib) --no-sig-check
-esxcli network firewall ruleset set -e false -r httpClient
-
-
-
-
-esxcli network vswitch standard set --vswitch-name=vSwitch0 --mtu=9000
-esxcli network ip interface set -i vmk0 -m 9000
-esxcli network vswitch standard portgroup set --portgroup-name="Management Network" --vlan-id=201
-
-reboot
-```
-
-### pgesxa3_ks.cfg
-
 ```shell
 vmaccepteula
 
@@ -186,9 +58,9 @@ clearpart --all --overwritevmfs --drives=t10.NVMe____CT1000T500SSD8_____________
 install --drive=t10.NVMe____SPCC_M.2_PCIe_SSD_______________________0000800431D5820C --overwritevmfs
 reboot
 
-network --bootproto=static --device=vmnic1 --ip=10.200.1.224 --netmask=255.255.255.0 --gateway=10.200.1.1 --hostname=pgesxa3.pgnet.io --nameserver=10.200.1.240 --vlanid=201 --addvmportgroup=1
+network --bootproto=static --device=vmnic1 --ip=10.200.1.224 --netmask=255.255.255.0 --gateway=10.200.1.1 --hostname=pgesxa3.pgnet.io --nameserver=10.200.1.1 --vlanid=201 --addvmportgroup=1
 
-rootpw g!CC@6AoaFNz@Cu@
+rootpw VMware123!VMware123!
 
 %firstboot --interpreter=busybox
 
@@ -199,11 +71,20 @@ done
 esxcli network ip dns search add --domain=pgnet.io
 
 # Configure NTP
-esxcli system ntp set -s 10.200.1.240
+esxcli system ntp set -s 203.14.0.251
 esxcli system ntp set --enabled true
 
+# enable & start SSH
 vim-cmd hostsvc/enable_ssh
 vim-cmd hostsvc/start_ssh
+
+# enable & start ESXi Shell
+vim-cmd hostsvc/enable_esx_shell
+vim-cmd hostsvc/start_esx_shell
+
+# Suppress ESXi Shell warning
+esxcli system settings advanced set -o /UserVars/SuppressShellWarning -i 1
+
 esxcli network firewall ruleset set -e true -r sshServer
 esxcli system settings advanced set -o /UserVars/SuppressShellWarning -i 1
 
@@ -218,17 +99,26 @@ esxcli system settings advanced set -o /Mem/TierNvmePct -i 300
 
 /bin/generate-certificates
 
+
+# AMD-specific configuration
+# Add your AMD-specific ESXi configuration here
 # Workaround required for AMD Ryzen-based CPU
 echo 'monitor_control.disable_apichv ="TRUE"' >> /etc/vmware/config
+echo 'cpuid.brandstring = "AMD EPYC Ryzen 9 9955HX"' >> /etc/vmware/config
 
-# Install vSAN ESA Mock VIB (Internal URL for Offline Depot)
+
+# Memory Optimizations
+esxcli system settings advanced set -o /Mem/ShareForceSalting -i 0
+esxcli system settings advanced set -o /Mem/AllocGuestLargePage -i 0
+
+# vSAN Optimizations
+esxcli system settings advanced set -i 1 -o /VSAN/DOMNetworkSchedulerThrottleComponent
+
+# Install vSAN ESA Mock VIB
 esxcli network firewall ruleset set -e true -r httpClient
 esxcli software acceptance set --level CommunitySupported
-esxcli software vib install -v [http://10.200.1.240/vib/nested-vsan-esa-mock-hw.vib](http://10.200.1.240/vib/nested-vsan-esa-mock-hw.vib) --no-sig-check
+esxcli software vib install -v https://github.com/lamw/nested-vsan-esa-mock-hw-vib/releases/download/1.0/nested-vsan-esa-mock-hw.vib --no-sig-check
 esxcli network firewall ruleset set -e false -r httpClient
-
-
-
 
 esxcli network vswitch standard set --vswitch-name=vSwitch0 --mtu=9000
 esxcli network ip interface set -i vmk0 -m 9000
