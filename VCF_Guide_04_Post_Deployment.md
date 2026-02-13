@@ -155,11 +155,11 @@ Once the VCF deployment is complete and the physical router is prepped, the Edge
 1. From vCenter ([vc.pgnet.io](https://vc.pgnert.io))  --> Go to networks for the VCF cluster
    
 
-   <img src="/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 21.46.29@2x.png" alt="CleanShot 2026-02-12 at 21.46.29@2x" style="zoom:25%;" />
+   <img src="data/img/CleanShot 2026-02-12 at 21.46.29@2x.png" alt="CleanShot 2026-02-12 at 21.46.29@2x" style="zoom:25%;" />
 
 2. Setup Network Connectivity --> Go To Network Connectivity. -> Configure Network Connectivity
 
-   ![CleanShot 2026-02-12 at 21.49.09@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 21.49.09@2x.png)
+   ![CleanShot 2026-02-12 at 21.49.09@2x](data/img/CleanShot 2026-02-12 at 21.49.09@2x.png)
 
 3. Select Centralized Connectivity
 
@@ -168,7 +168,7 @@ Once the VCF deployment is complete and the physical router is prepped, the Edge
 
    
 
-   <img src="/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 21.51.36@2x.png" alt="CleanShot 2026-02-12 at 21.51.36@2x" style="zoom:25%;" />
+   <img src="data/img/CleanShot 2026-02-12 at 21.51.36@2x.png" alt="CleanShot 2026-02-12 at 21.51.36@2x" style="zoom:25%;" />
 
 4. Continue because all pre-reqs are configured and ready.
 
@@ -176,7 +176,7 @@ Once the VCF deployment is complete and the physical router is prepped, the Edge
 
    
 
-   ![CleanShot 2026-02-12 at 21.51.58@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 21.51.58@2x.png)
+   ![CleanShot 2026-02-12 at 21.51.58@2x](data/img/CleanShot 2026-02-12 at 21.51.58@2x.png)
 
 5. Configure Edge Node
 
@@ -228,10 +228,10 @@ Once the VCF deployment is complete and the physical router is prepped, the Edge
    
    
    
-      ![CleanShot 2026-02-12 at 22.09.04@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 22.09.04@2x.png)
+      ![CleanShot 2026-02-12 at 22.09.04@2x](data/img/CleanShot 2026-02-12 at 22.09.04@2x.png)
    
    
-      ![CleanShot 2026-02-12 at 22.09.23@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 22.09.23@2x.png)
+      ![CleanShot 2026-02-12 at 22.09.23@2x](data/img/CleanShot 2026-02-12 at 22.09.23@2x.png)
 
 
 
@@ -258,7 +258,7 @@ Once the VCF deployment is complete and the physical router is prepped, the Edge
    
 
 
-   ![CleanShot 2026-02-12 at 21.58.32@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 21.58.32@2x.png)
+   ![CleanShot 2026-02-12 at 21.58.32@2x](data/img/CleanShot 2026-02-12 at 21.58.32@2x.png)
 
    
 
@@ -277,7 +277,7 @@ Once the VCF deployment is complete and the physical router is prepped, the Edge
 
    
    
-      ![CleanShot 2026-02-12 at 22.08.25@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 22.08.25@2x.png)
+      ![CleanShot 2026-02-12 at 22.08.25@2x](data/img/CleanShot 2026-02-12 at 22.08.25@2x.png)
 
    
 
@@ -325,7 +325,7 @@ Once the VCF deployment is complete and the physical router is prepped, the Edge
    
       
    
-      ![CleanShot 2026-02-12 at 22.06.42@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 22.06.42@2x.png)
+      ![CleanShot 2026-02-12 at 22.06.42@2x](data/img/CleanShot 2026-02-12 at 22.06.42@2x.png)
    
       
 
@@ -336,7 +336,7 @@ Once the VCF deployment is complete and the physical router is prepped, the Edge
 
    
    
-   ![CleanShot 2026-02-12 at 22.10.23@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 22.10.23@2x.png)
+   ![CleanShot 2026-02-12 at 22.10.23@2x](data/img/CleanShot 2026-02-12 at 22.10.23@2x.png)
    
 9. Build take a while and it will deploy Edge Nodes to the cluster.
 
