@@ -23,10 +23,10 @@ The deployment guide is broken down into logical phases for easier version contr
 | Part   | Document                                                     | Description                                                  |
 | ------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | **01** | [Architecture & Planning](VCF_Guide_01_Architecture_Planning.md) | Bill of Materials (BOM), Network Schedule (VLANs/IPs), and Identity Strategy. |
-| **02** | [Infrastructure Prep](VCF_Guide_02_Infrastructure_Prep.md) | Physical Switch configuration and ESXi Host Bootstrapping (Kickstart). |
-| **03** | [The Deployment](VCF_Guide_03_Deployment.md) | Deploying the VCF Installer (Cloud Builder) and running the Bring-Up wizard. |
-| **04** | [Post-Deployment](VCF_Guide_04_Post_Deployment.md) | Day 2 configurations: Identity (AD/LDAP), Certificates, Operations, and BGP Peering. |
-| **05** | [Appendices](VCF_Guide_05_Appendices.md) | Reference configurations: FRR Router Config, Full Kickstart Scripts, JSON Specs, and Credentials. |
+| **02** | [Infrastructure Prep](VCF_Guide_02_Infrastructure_Prep.md)   | Physical Switch configuration and ESXi Host Bootstrapping (Kickstart). |
+| **03** | [The Deployment](VCF_Guide_03_Deployment.md)                 | Deploying the VCF Installer (Cloud Builder) and running the Bring-Up wizard. |
+| **04** | [Post-Deployment](VCF_Guide_04_Post_Deployment.md)           | Day 2 configurations: Identity (AD/LDAP), Certificates, Operations, and BGP Peering. |
+| **05** | [Appendices](VCF_Guide_05_Appendices.md)                     | Reference configurations: FRR Router Config, Full Kickstart Scripts, JSON Specs, and Credentials. |
 | **06** | [Windows AD Deployment](VCF_Guide_06_Windows_AD_Deployment.md) | Specialized Salt-based runbook for building the core Windows Infrastructure Server (`pglin1`). |
 
 ## Key Configurations

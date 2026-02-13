@@ -368,24 +368,21 @@ Status         : Success
 ### B.1: Phase Command Summary
 
 ```text
-Phase 1: DC Promotion
-  salt 'winsrv1' state.apply pgnet_dc.dc_promote pillar='{"pgnet":{"dsrm_password":"YOUR_COMPLEX_PASSWORD","safe_mode_password":"YOUR_COMPLEX_PASSWORD"}}'
-  Reboot, then snapshot S2-dc-only
-
-Phase 2: DNS Configuration
-  salt 'winsrv1' state.apply pgnet_dc.dns_config
-
-Phase 3-4: AD Structure (OUs, Groups, Users)
-  salt 'winsrv1' state.apply pgnet_dc.ous_groups_users
-  salt 'winsrv1' state.apply pgnet_dc.verify_ous_users
-  Snapshot S3-pre-ca
-
-Phase 5: Certificate Authority
-  salt 'winsrv1' state.apply pgnet_dc.ca_setup
-  Snapshot S5-complete
-
-Phase 6: Verification
-  salt 'winsrv1' state.apply pgnet_dc.verify
+salt 'winsrv1' state.apply roles
+salt 'winsrv1' state.apply locale
+salt 'winsrv1' state.apply update pillar='{"update": {"force_reboot": true}}'
+salt 'winsrv1' state.apply pkgmgmt.bootstrap
+salt 'winsrv1' state.apply update pillar='{"update": {"force_reboot": true}}'
+salt 'winsrv1' state.apply pkgmgmt.packages
+salt 'winsrv1' state.apply update pillar='{"update": {"force_reboot": true}}'
+salt 'winsrv1' state.apply pg_net.dc_promote
+salt 'winsrv1' state.apply update pillar='{"update": {"force_reboot": true}}'
+salt 'winsrv1' state.apply pgnet_dc.dns_config
+salt 'winsrv1' state.apply pgnet_dc.ous_groups_users
+salt 'winsrv1' state.apply pgnet_dc.verify_ous_users
+salt 'winsrv1' state.apply pgnet_dc.ca_setup
+salt 'winsrv1' state.apply pgnet_dc.ca_config
+salt 'winsrv1' state.apply pgnet_dc.iis_ssl
 ```
 
 ## Appendix C: AD Groups Reference

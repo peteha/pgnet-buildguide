@@ -2,7 +2,7 @@
 
 ## Phase 4: Post-Deployment
 
-### 4.1 Configure Identity & Certificates (Day 2)
+### Configure Identity & Certificates (Day 2)
 
 **Pre-requisite:** Ensure your Windows Active Directory server is fully deployed and operational. Refer to [**VCF Guide Part 6: Windows AD Server Deployment**](VCF_Guide_06_Windows_AD_Deployment.md) for setup instructions.
 
@@ -21,47 +21,126 @@ Before deploying additional operations or workload components, we must establish
      3. Import the signed certificates back into SDDC Manager.
      4. Execute the "Replace Certificates" workflow to propagate trust across the stack.
 
-### 4.2 Deploy VCF Operations Suite
+### Identity and Access - VCF Operations
+**Task - SSO Configuration for VCF**
 
-1. **Operations (Aria Ops):**
-   - Log in to SDDC Manager and deploy VCF Operations.
-   - **Deploy Remote Collector:** Deploy the Ops Remote Collector node to `opscol.pgnet.io` (10.200.1.13).
-2. **Operations for Networks (Aria Ops for Networks/vRNI):**
-   - **Platform Node:** Deploy to `opsnet.pgnet.io` (10.200.1.44).
-   - **Collector Node:** Deploy to `opsnetcol.pgnet.io` (10.200.1.45).
-   - **Configuration:** Pair the collector with the platform and configure flow data collection from the Distributed Switches.
+This will add the users and groups from Active Directory as authenticated users in the VCF Operations suite. This allows you to use your existing AD credentials to log in to these platforms and manage permissions via AD groups.
 
-### 4.3 Populating the Offline Depot (William Lam Method)
+Create and embedded identity broker SSO domain:
 
-Since our SDDC Manager is offline/air-gapped for control, we will use the **Depot Workstation** (internet connected) to harvest the required bundles using the method documented by William Lam.
+1. Select VCF domain - `pgvcf1`
+2. Select Identity Broker (Embedded)
+3. Select Directory-Based Identity Provider - AD/LDAP
+4. Configure LDAP ([LDAP Configuration table](#ldap-configuration))
+5. Configure Group Mappings ([Group Mapping table](#group-mapping))
+6. Specify the base group DN - `DC=pgnet,DC=local`
+7. Search VCF and Add ([User Groups in Active Directory table](#user-groups-in-active-directory))
+8. Specify the base user DN - `DC=pgnet,DC=local`
+9. Add the users from Active Directory ([Users in Active Directory table](#users-in-active-directory))
 
-**Process Overview:**
 
-1. **Generate Marker File:**
-   - Log in to your offline SDDC Manager via SSH.
-   - Generate the `markerFile` (JSON) which represents the current state of your VCF environment.
-   - Command: `/opt/vmware/vcf/lcm/lcm-app/bin/generate-marker-file`
-   - Transfer this file to your **Depot Workstation**.
-2. **Download Bundles (On Depot Workstation):**
-   - On the workstation, run the **Bundle Transfer Utility** (OBTU).
-   - Point it to the `markerFile` and your Broadcom Support credentials.
-   - The tool will identify exactly which bundles are needed for VCF 9.0.2 (and future patches) and download them to a local directory.
-   - *Reference:* [William Lam - Automating VCF Offline Bundle Download](https://williamlam.com) (Search for his specific script `download_vcf_bundles.py` or his guide on OBTU filters to avoid downloading petabytes of unnecessary data).
-3. **Upload to SDDC Manager:**
-   - Transfer the downloaded bundle directory from the Workstation to the SDDC Manager (via SCP/WinSCP).
-   - Run the OBTU in upload mode on the SDDC Manager to ingest the bundles into the Lifecycle Management database.
-   - Command: `lcm-bundle-transfer-util --upload --bundleDirectory ...`
-4. **Verify:**
-   - Refresh the SDDC Manager UI -> Bundle Management. The new bundles should appear as "Available."
+##### LDAP Configuration
 
-### 4.4 Verify Memory Tiering
+| Field                                  | Value                                                    | Notes                                                        |
+| -------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
+| **Identity Source Type**               | Active Directory over LDAP                               |                                                              |
+| **Identity source name**               | `pgnet.local`                                            |                                                              |
+| **Base distinguished name for users**  | `DC=pgnet,DC=local`                                      | Sets scope to entire domain to include users in `it`, `corp`, `sales`, etc. |
+| **Base distinguished name for groups** | `DC=pgnet,DC=local`                                      | Sets scope to entire domain to include groups in all OUs.    |
+| **Domain name**                        | `pgnet.local`                                            |                                                              |
+| **Domain alias**                       | `pgnet`                                                  |                                                              |
+| **Username**                           | `svc-ldap@pgnet.local` | Bind account created by Salt.                                |
+| **Password**                           | `VMware123!VMware123!`                                   | Default service account password.                            |
+| **Connect to**                         | Specific domain controllers                              |                                                              |
+| **Primary server URL**                 | `ldaps://winsrv1.pgnet.local:636`                        | Requires CA cert trust.                                      |
+| **Certificates**                       | *Upload Root CA Certificate*                             | Export from NAS/SMB share (`rootca.cer`).                    |
 
-*Note: Memory Tiering was enabled during the Kickstart (Phase 2.2).*
+##### Group Mapping
 
-1. **Verification:** Check Host Summary for each host (`pgesxa1-3`) to ensure "Tiered Memory" is active and total capacity reflects the augmentation (Physical RAM + 300% NVMe Tier).
-2. **No Action Required:** Since this was handled in Day 0, no maintenance mode or reboot is required in Day 2 unless the configuration failed.
+| Attribute Name in VCF Identity broker | Attribute Name in Active Directory |
+| ------------------------------------- | ---------------------------------- |
+| **userName \***                       | `sAMAccountName`                   |
+| **firstName**                         | `givenName`                        |
+| **lastName**                          | `sn`                               |
+| **distinguishedName**                 | `distinguishedName`                |
+| **employeeID**                        | *(Not Mapped)*                     |
+| **email**                             | `mail`                             |
+| **userPrincipalName**                 | `userPrincipalName`                |
 
-### 4.5 Physical Router Configuration (BGP) (Day 2)
+##### User Groups in Active Directory
+
+| Name                   | Path                                                         |
+| ---------------------- | ------------------------------------------------------------ |
+| VCF-Auditors           | `CN=VCF-Auditors,OU=Groups,OU=it,DC=pgnet,DC=local`          |
+| VCF-Certificate-Admins | `CN=VCF-Certificate-Admins,OU=Groups,OU=it,DC=pgnet,DC=local` |
+| VCF-Cloud-Admins       | `CN=VCF-Cloud-Admins,OU=Groups,OU=it,DC=pgnet,DC=local`      |
+| VCF-NSX-Admins         | `CN=VCF-NSX-Admins,OU=Groups,OU=it,DC=pgnet,DC=local`        |
+| VCF-Operations         | `CN=VCF-Operations,OU=Groups,OU=it,DC=pgnet,DC=local`        |
+| VCF-vSphere-Admins     | `CN=VCF-vSphere-Admins,OU=Groups,OU=it,DC=pgnet,DC=local`    |
+
+
+##### Users in Active Directory
+
+
+| Name                 | Path                                                       |
+| -------------------- | ---------------------------------------------------------- |
+| Domain Administrator | `CN=Domain Administrator,OU=Users,OU=it,DC=pgnet,DC=local` |
+| DevOps Admin         | `CN=DevOps Admin,OU=Users,OU=it,DC=pgnet,DC=local`         |
+| Infrastructure Admin | `CN=Infrastructure Admin,OU=Users,OU=it,DC=pgnet,DC=local` |
+| Peter Hauck          | `CN=Peter Hauck,OU=Users,OU=it,DC=pgnet,DC=local`          |
+
+**Task Complete - SSO Domain Configured**
+
+#### Task - Add SSO to VCF Components
+
+1. Under 'VCF Management` select `operations appliance` and Enable Single Sign-On
+2. Select the `vc.pgnet.io` identity broker.
+3. Under `VCF Management` select `automation appliance` and Enable Single Sign-On
+4. Select the `vc.pgnet.io` identity broker.
+
+#### Task - Add Certitificate CA to VCF
+
+1. Under Fleet Management -> Certificates, `Configure CA`
+
+| Field | Value |
+| ----- | ----- |
+| CA Server URL | `https://winsrv1.pgnet.local/certsrv` |
+| User Name | `svc-vcf-ca@pgnet.local` |
+| Password | `VMware123!VMware123!` |
+| Template Name | `VMware` |
+
+#### Task - Set Certifates on VCF Components
+
+Select the TLS Certificate types -> ... Generate CSR 
+
+Example Parameters for `fleet.pgnet.io`:
+
+| Parameter                    | Value / Options |
+| ---------------------------- | --------------- |
+| **Common Name**              | `fleet.pgnet.io`  |
+| **Organization**             | `pgnet`           |
+| **Organizational Unit**      | `PGGB`            |
+| **Country**                  | `Australia`       |
+| **State/Province**           | `Queensland`      |
+| **Locality**                 | `Brisbane`        |
+| **Email Address**            | `admin@pgnet.io`  |
+| **Host**                     | `fleet.pgnet.io`  |
+| **Subject Alternative Name** | `fleet.pgnet.io`  |
+| **Key Size**                 | `4096`            |
+
+Example device table:
+
+| Name             | Hostname         | Status | Issuer         | Expiration  | Support Status | Type            |
+| ---------------- | ---------------- | ------ | -------------- | ----------- | -------------- | --------------- |
+| Fleet Management | `fleet.pgnet.io` | Active | Microsoft CA   | 12 Feb 2028 | Activated      | TLS Certificate |
+| VCF Automation   | `pgauto-w2npg`   | Active | Self Signed CA | 4 Feb 2028  | Activated      | TLS Certificate |
+| VCF Operations   | `ops.pgnet.io`   | Active | Self Signed CA | 4 Feb 2028  | Activated      | TLS Certificate |
+
+The CA certificate will need to be added to the host computer access the devices.
+
+
+
+### Physical Router Configuration (BGP) (Day 2)
 
 Before proceeding with the NSX Edge Peering, we must ensure the upstream physical router is configured to peer with the new Edge Nodes.
 
@@ -69,66 +148,199 @@ Before proceeding with the NSX Edge Peering, we must ensure the upstream physica
 - **Action:** Apply the FRR / BGP configuration to the UDM. This sets up the router to listen for connections from the NSX Edge Nodes on AS 65001.
 - **Reference:** See **Appendix B** in the Appendices document for the full FRR (UDM) Router Configuration used in this lab.
 
-### 4.6 NSX Edge Peering & Overlay Setup (Day 2)
+### VPC Configuration - NSX Edge / Overlay
 
 Once the VCF deployment is complete and the physical router is prepped, the Edge Cluster is deployed but not yet routing north-south traffic to your physical core.
 
-**Step 1: Configure Tier-0 Gateway**
+1. From vCenter ([vc.pgnet.io](https://vc.pgnert.io))  --> Go to networks for the VCF cluster
+   
 
-1. Log in to **NSX Manager**.
-2. Navigate to **Networking > Tier-0 Gateways**.
-3. Create a new T0 Gateway (or edit the default one if created by VCF).
-4. **HA Mode:** Active/Active (Recommended for simple ECMP) or Active/Standby.
-5. **Local AS:** Set to **65001** (Must match the remote-as in your FRR config).
+   <img src="/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 21.46.29@2x.png" alt="CleanShot 2026-02-12 at 21.46.29@2x" style="zoom:25%;" />
 
-**Step 2: Configure Interfaces** Configure the uplinks to match the "RouterNet" subnets defined in your BOM:
+2. Setup Network Connectivity --> Go To Network Connectivity. -> Configure Network Connectivity
 
-- **Edge Node 1 / Uplink 1:** `10.200.250.11/24` (Connects to VLAN 250)
-- **Edge Node 1 / Uplink 2:** `10.200.251.11/24` (Connects to VLAN 251)
-- **Edge Node 2 / Uplink 1:** `10.200.250.12/24` (Connects to VLAN 250)
-- **Edge Node 2 / Uplink 2:** `10.200.251.12/24` (Connects to VLAN 251)
+   ![CleanShot 2026-02-12 at 21.49.09@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 21.49.09@2x.png)
 
-**Step 3: Configure BGP Neighbors** Under the T0 Gateway BGP settings, add your physical router peers:
+3. Select Centralized Connectivity
 
-- **Neighbor 1:** `10.200.250.1` (Remote AS: 65000)
-- **Neighbor 2:** `10.200.251.1` (Remote AS: 65000)
-- **Password:** `pggbnet` (As defined in FRR config)
-- **BFD:** Enabled (recommended for fast failover).
+   
+   
 
-**Step 4: Route Redistribution**
+   
 
-1. In the T0 Gateway, expand **Route Re-distribution**.
-2. Enable redistribution for:
-   - Connected Interfaces / Segments
-   - Tier-1 Connected Subnets (Load Balancer VIPs, Workload segments)
+   <img src="/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 21.51.36@2x.png" alt="CleanShot 2026-02-12 at 21.51.36@2x" style="zoom:25%;" />
 
-**Verification:** Run `get bgp neighbor summary` on the NSX Edge CLI. You should see state `Established` for neighbors `10.200.250.1` and `10.200.251.1`.
+4. Continue because all pre-reqs are configured and ready.
 
-### 4.7 Enable Supervisor Cluster (VKS) (Day 2)
+   
 
-To enable Kubernetes support (vSphere with Tanzu), we will activate the Supervisor Cluster on the Management Domain.
+   
 
-1. **Workload Management:** In vSphere Client, go to **Workload Management**.
-2. **Select Cluster:** Choose the Management Domain cluster.
-3. **Network Stack:** Select "NSX" as the networking stack.
-4. **Management Network:** Map to **VLAN 208 (VKS Mgmt)**.
-   - *Note:* This provides IP addresses for the Supervisor Control Plane VMs.
-5. **Workload Network:** Map to **VLAN 209 (K8 Workload)**.
-   - *Note:* This is the IP range used for the actual Tanzu Kubernetes Grid (TKG) clusters you deploy later.
-6. **Content Library:** Select a Subscribed Content Library to pull TKG images.
-7. **Size:** Select "Small" or "Tiny" for this lab environment.
+   ![CleanShot 2026-02-12 at 21.51.58@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 21.51.58@2x.png)
 
-### 4.8 Configure VCF Automation & VPCs (End State)
+5. Configure Edge Node
 
-To support modern applications and IAAS, we will deploy VCF Automation and configure the Tenant structure.
+   
+   
+   pgen1:
+   
+   | Field               | Value                        |
+   | ------------------- | ---------------------------- |
+   | **FQDN**            | pgen1.pgnet.io               |
+   | **vSphere Cluster** | pgmgmt-cl01                  |
+   | **Data Store**      | pgmgmt-cl01-ds-vsan01        |
+   | **Size**            | Small                        |
+   | **Management IP**   | 10.200.1.50/24               |
+   | **Default Gateway** | 10.200.1.1                   |
+   | **Port Group**      | pgmgmt-cl01-vds01-pg-vm-mgmt |
+   
+   
+   
+   | Virtual Interface | Interface | Active PNIC | Standby PNIC |
+   | ----------------- | --------- | ----------- | ------------ |
+   | 1                 | fp-eth0   | vmnic1      | vmnic2       |
+   | 2                 | fp-eth1   | vmnic2      | vmnic1       |
+   
+   
+   
+   
+   
+   pgen2:
+   
+   | Field               | Value                        |
+   | ------------------- | ---------------------------- |
+   | **FQDN**            | pgen2.pgnet.io               |
+   | **vSphere Cluster** | pgmgmt-cl01                  |
+   | **Data Store**      | pgmgmt-cl01-ds-vsan01        |
+   | **Size**            | Small                        |
+   | **Management IP**   | 10.200.1.51/24               |
+   | **Default Gateway** | 10.200.1.1                   |
+   | **Port Group**      | pgmgmt-cl01-vds01-pg-vm-mgmt |
+   
+   
+   
+   | Virtual Interface | Interface | Active PNIC | Standby PNIC |
+   | ----------------- | --------- | ----------- | ------------ |
+   | 1                 | fp-eth0   | vmnic1      | vmnic2       |
+   | 2                 | fp-eth1   | vmnic2      | vmnic1       |
+   
+   
+   
+   
+   
+      ![CleanShot 2026-02-12 at 22.09.04@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 22.09.04@2x.png)
+   
+   
+      ![CleanShot 2026-02-12 at 22.09.23@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 22.09.23@2x.png)
 
-1. **Deploy VCF Automation (Aria Automation):**
-   - Deploy the Automation appliance to `auto.pgnet.io` (10.200.1.16).
-   - Integrate with Identity Manager (vIDM/Workspace ONE).
-2. **Cloud Account:**
-   - Add the local vCenter (`vc.pgnet.io`) and NSX Manager (`nsx.pgnet.io`) as a "vSphere Cloud Account".
-3. **Tenancy & VPC Structure:**
-   - **Project:** Create a "Default Project" for lab usage.
-   - **Cloud Zone:** Map the Consolidated Cluster as the Cloud Zone.
-   - **VPC Policy:** Create a Virtual Private Cloud (VPC) policy to allow on-demand network creation.
-   - **Image/Flavor Mappings:** Create mappings for your VM templates (e.g., "small" = 2vCPU/4GB).
+
+
+6. Set Pool for TEP
+
+   
+
+   Pool configuration:
+
+
+   | Parameter         | Value                       |
+   | ----------------- | --------------------------- |
+   | **TEP VLAN**      | 205                         |
+   | **IP Allocation** | IP Pool                     |
+   | **IP Pool Name**  | Pool-TEP1                   |
+   | **CIDR**          | 10.200.5.0/24               |
+   | **IP Range**      | 10.200.5.100 - 10.200.5.199 |
+   | **Gateway IP**    | 10.200.5.1                  |
+   | **DNS Servers**   | 10.200.1.240, 10.200.10.75  |
+   | **DNS Suffix**    | pgnet.io                    |
+
+​      
+
+   
+
+
+   ![CleanShot 2026-02-12 at 21.58.32@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 21.58.32@2x.png)
+
+   
+
+7. Setup Workload Domain Connectivity 
+
+   
+
+   | Category         | Field                                | Value          |
+   | ---------------- | ------------------------------------ | -------------- |
+   | **Identity**     | Gateway Name                         | pgrt1          |
+   | **Availability** | High Availability Mode               | Active Standby |
+   | **Routing**      | Gateway Routing Type                 | BGP            |
+   | **Routing**      | Local Autonomous System Number (ASN) | 65001          |
+   | **VPC**          | VPC External IP Blocks               | 10.210.0.0/16  |
+   | **VPC**          | Private - Transit Gateway IP Blocks  | 10.220.0.0/16  |
+
+   
+   
+      ![CleanShot 2026-02-12 at 22.08.25@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 22.08.25@2x.png)
+
+   
+
+
+8. Setup Gateway Uplinks
+
+   Configure both uplinks and both edge nodes.
+   
+   
+   
+   
+   
+   pgen1:
+   
+   | Parameter             | First Uplink     | Second Uplink    |
+   | --------------------- | ---------------- | ---------------- |
+   | **Interface VLAN**    | 250              | 251              |
+   | **Interface CIDR**    | 10.200.250.11/24 | 10.200.251.11/24 |
+   | **BGP Peer IP**       | 10.200.250.1     | 10.200.251.1     |
+   | **BGP Peer ASN**      | 65000            | 65000            |
+   | **BFD**               | Enabled (Yes)    | Enabled (Yes)    |
+   | **MTU**               | 9000             | 9000             |
+   | **Target Router**     | TOR-1            | TOR-1            |
+   | **Host Interface**    | vmnic1           | vmnic2           |
+   | **Gateway Interface** | fp-eth0          | fp-eth1          |
+   
+   
+      pgen2:
+   
+   | Parameter             | First Uplink     | Second Uplink    |
+   | --------------------- | ---------------- | ---------------- |
+   | **Interface VLAN**    | 250              | 251              |
+   | **Interface CIDR**    | 10.200.250.12/24 | 10.200.251.12/24 |
+   | **BGP Peer IP**       | 10.200.250.1     | 10.200.251.1     |
+   | **BGP Peer ASN**      | 65000            | 65000            |
+   | **BFD**               | Enabled (Yes)    | Enabled (Yes)    |
+   | **MTU**               | 9000             | 9000             |
+   | **Target Router**     | TOR-1            | TOR-1            |
+   | **Host Interface**    | vmnic1           | vmnic2           |
+   | **Gateway Interface** | fp-eth0          | fp-eth1          |
+   
+      
+   
+      
+   
+      
+   
+      ![CleanShot 2026-02-12 at 22.06.42@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 22.06.42@2x.png)
+   
+      
+
+
+
+
+9. Finsihed Diagrams from Wizard
+
+   
+   
+   ![CleanShot 2026-02-12 at 22.10.23@2x](/Users/peteha/GitHub/pgnet-buildguide/data/img/CleanShot 2026-02-12 at 22.10.23@2x.png)
+   
+9. Build take a while and it will deploy Edge Nodes to the cluster.
+
+   The process will fail if you do not have the AMD setting in the kickstart script see [Infrastructure Prep](VCF_Guide_02_Infrastructure_Prep.md)
+
+
+
